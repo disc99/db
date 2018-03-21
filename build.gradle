@@ -26,6 +26,7 @@ dependencies {
 
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
+    testCompile group: 'org.assertj', name: 'assertj-core', version: '3.9.1'
 }
 
 // In this section you declare where to find the dependencies of your project
