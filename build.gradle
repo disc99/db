@@ -21,6 +21,9 @@ dependencies {
     // This dependency is found on compile classpath of this component and consumers.
     compile 'com.google.guava:guava:23.0'
 
+    provided 'org.projectlombok:lombok:1.16.20'
+
+
     // Use JUnit test framework
     testCompile 'junit:junit:4.12'
 }
