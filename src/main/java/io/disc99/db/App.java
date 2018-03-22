@@ -6,18 +6,16 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
 
-import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.toList;
+import static io.disc99.db.Functions.toListAnd;
 
 /*
  * Ubiquitous language.
  *
  * Table: Table
  * Column: Column
- * Record: Table Data
- *
- * Result: selected record
- * Row: selected one result
+ * Row: row
+ * Value: row data
+ * Result: query rows
  *
  */
 public class App {
@@ -26,20 +24,102 @@ public class App {
 
     }
 
-    static Map<String, Table> scheme = new HashMap<>();
+    static Schema schema = Schema.create();
 
+    static class Query {
+        static ResultSet from(String tableName){
+            return schema.get(tableName).toResultSet();
+        }
+        static ResultSet from(ResultSet resultSet){
+            return resultSet;
+        }
+    }
 
-    static class Relation {
-        List<Column> columns;
-        List<Record> records;
+    interface ResultSet {
+        ResultSet select(String... columnNames);
 
-        int findColumn(String name) {
-            for(int i = 0; i < columns.size(); ++i){
-                if(columns.get(i).name.equals(name)){
-                    return i;
-                }
+        ResultSet leftJoin(String tableName, String matchingField);
+
+        ResultSet leftJoin(ResultSet relation, String matchingField);
+
+        ResultSet lessThan(String columnName, Integer value);
+
+        ResultSet equalsTo(String columnName, Object value);
+    }
+
+    @AllArgsConstructor
+    static class Result implements ResultSet {
+        Columns columns;
+        Rows rows;
+
+        public Result(Columns columns) {
+            this.columns = columns;
+            this.rows = Rows.empty();
+        }
+
+        @Override
+        public ResultSet select(String... columnNames) {
+            Columns newColumns = Columns.create(columnNames);
+            List<Integer> indexes = columns.findIndexesBy(newColumns);
+            Rows newRows = rows.selectBy(indexes);
+            return new Result(newColumns, newRows);
+        }
+
+        @Override
+        public ResultSet leftJoin(String tableName, String matchingField) {
+            Table tbl = schema.get(tableName);
+            return leftJoin(tbl.toResultSet(), matchingField);
+        }
+
+        @Override
+        public ResultSet leftJoin(ResultSet target, String matchingField) {
+            Result tbl = (Result) target;
+            Columns newColumns = columns.concat(tbl.columns);
+            Column matchingColumn = new Column(matchingField);
+            Integer leftColumnIdx = columns.findIndexBy(matchingColumn);
+
+            if (!columns.exist(matchingColumn) && !tbl.columns.exist(matchingColumn)) {
+                return new Result(newColumns);
             }
-            return columns.size();
+
+            Rows newRows = rows.map((Row row) -> {
+                Object leftValue = row.get(leftColumnIdx);
+                Result leftRel = (Result) target.equalsTo(matchingField, leftValue);
+                return leftRel.isEmpty()
+                        ? row.concat(Row.empty(newColumns.size() - row.size()))
+                        : row.concat(leftRel.get(0)); // TODO current one to one only
+            });
+            return new Result(newColumns, newRows);
+        }
+
+        @Override
+        public ResultSet lessThan(String columnName, Integer value) {
+            Column column = new Column(columnName);
+            if (!columns.exist(column)) {
+                return new Result(columns);
+            }
+            Integer idx = columns.findIndexBy(column);
+            Rows newRows = rows.lessThan(idx, value);
+            return new Result(columns, newRows);
+        }
+
+        @Override
+        public ResultSet equalsTo(String columnName, Object value) {
+            Column column = new Column(columnName);
+            if (!columns.exist(column)) {
+                return new Result(columns);
+            }
+            Integer idx = columns.findIndexBy(column);
+            Rows newRows = rows.equalsTo(idx, value);
+            return new Result(columns, newRows);
+        }
+
+        private Row get(Integer index) {
+            return rows.get(index);
+        }
+
+        private boolean isEmpty() {
+            return rows.isEmpty();
         }
 
         @Override
@@ -47,17 +127,14 @@ public class App {
             StringWriter sw = new StringWriter();
             PrintWriter pw = new PrintWriter(sw);
             //フィールド名
-            for(Column cl : columns){
+            for(Column cl : columns.values){
                 pw.print("|");
-                if(cl.parent != null && !cl.parent.isEmpty()){
-                    pw.print(cl.parent + ".");
-                }
                 pw.print(cl.name);
             }
             pw.println("|");
-            //データ
-            for(Record record : records){
-                for(Object v : record.values){
+            // データ
+            for(Row row : rows.values){
+                for(Object v : row.values){
                     pw.print("|");
                     pw.print(v);
                 }
@@ -68,145 +145,34 @@ public class App {
         }
     }
 
-    static class Query extends Relation {
-        private Query(List<Column> columns, List<Record> records) {
-            this.columns = columns;
-            this.records = records;
-        }
-
-        static Query from(String tableName) {
-            Table table = scheme.get(tableName);
-            return scheme.get(tableName).columns.stream()
-                    .map(column -> new Column(tableName, column.name))
-                    .collect(collectingAndThen(toList(), columns -> new Query(columns, table.records)));
-        }
-
-        Query select(String... columnNames) {
-            List<Integer> indexes = new ArrayList<>();
-            List<Column> newColumns = new ArrayList<>();
-            for (String n : columnNames) {
-                newColumns.add(new Column(n));
-                //属性を探す
-                int idx = findColumn(n);
-                indexes.add(idx);
-            }
-            //データの投影
-            List<Record> newRecords = new ArrayList<>();
-            for (Record record : records) {
-                List<Object> values = new ArrayList<>();
-                for (int idx : indexes) {
-                    if (idx < record.values.size()) {
-                        values.add(record.values.get(idx));
-                    } else {
-                        values.add(null);
-                    }
-                }
-                newRecords.add(new Record(values));
-            }
-
-            return new Query(newColumns, newRecords);
-        }
-
-        Query leftJoin(String tableName, String matchingField) {
-            //テーブル取得
-            Table tbl = scheme.get(tableName);
-            //属性の作成
-            List<Column> newColumns = new ArrayList<>(columns);
-            for(Column cl : tbl.columns){
-                newColumns.add(new Column(tableName, cl.name));
-            }
-
-            //値の作成
-            List<Record> newRecords = new ArrayList<>();
-            int leftColumnIdx = findColumn(matchingField);
-            int rightColumnIdx = tbl.findColumn(matchingField);
-            if(leftColumnIdx >= columns.size() || rightColumnIdx >= tbl.columns.size()){
-                //該当フィールドがない場合は値の結合をしない
-                return new Query(newColumns, Collections.EMPTY_LIST);
-            }
-            //結合処理
-            for(Record tp : records){
-                //元のテーブルのデータ
-                Record ntpl = new Record(new ArrayList<>(tp.values));
-                //足りないフィールドを埋める
-                while(ntpl.values.size() < columns.size()){
-                    ntpl.values.add(null);
-                }
-                //結合対象のフィールドを探す
-                Object leftValue = ntpl.values.get(leftColumnIdx);
-                //左側テーブルに値があるときだけ結合
-                if(leftValue != null){
-                    for(Record rtpl : tbl.records){
-                        if(rtpl.values.size() < rightColumnIdx){
-                            continue;
-                        }
-                        if(leftValue.equals(rtpl.values.get(rightColumnIdx))){
-                            //一致するとき
-                            for(Object v : rtpl.values){
-                                ntpl.values.add(v);
-                            }
-                            break;//今回は、タプルの対応は一対一まで
-                        }
-                    }
-                }
-                //足りないフィールドを埋める
-                while(ntpl.values.size() < newColumns.size()){
-                    ntpl.values.add(null);
-                }
-
-                newRecords.add(ntpl);
-            }
-            return new Query(newColumns, newRecords);
-        }
-
-        Query lessThan(String columnName, Integer value){
-            int idx = findColumn(columnName);
-            if(idx >= columns.size()){
-                return new Query(columns, Collections.EMPTY_LIST);
-            }
-            List<Record> newRecords = new ArrayList<>();
-            for(Record tp : records){
-                if((Integer)tp.values.get(idx) < value){
-                    newRecords.add(tp);
-                }
-            }
-            return new Query(columns, newRecords);
-        }
-
-    }
-    static class Table extends Relation {
+    static class Table {
         String name;
-        private Table(String name, List<Column> columns) {
+        Columns columns;
+        Rows rows;
+
+        private Table(String name, Columns columns) {
             this.name = name;
             this.columns = columns;
-            records = new ArrayList<>();
+            this.rows = Rows.empty();
         }
 
         static Table create(String name, String[] columnNames) {
             Table table = Arrays.stream(columnNames)
                     .map(Column::new)
-                    .collect(collectingAndThen(toList(), columns -> new Table(name, columns)));
-            scheme.put(name, table);
+                    .collect(toListAnd(columns -> new Table(name, new Columns(columns))));
+            schema.add(table);
             return table;
         }
 
         Table insert(Object... values) {
-            records.add(new Record(Arrays.asList(values)));
+            rows.add(new Row(Arrays.asList(values)));
             return this;
         }
-    }
-    
-    @AllArgsConstructor
-    static class Record {
-        List<Object> values;
-    }
 
-    @AllArgsConstructor
-    static class Column {
-        String parent;
-        String name;
-        Column(String name) {
-            this("", name);
+        public Result toResultSet() {
+            return new Result(columns, rows);
         }
     }
+
 }
+
