@@ -1,10 +1,12 @@
 package io.disc99.db;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
 import static io.disc99.db.Functions.toListAnd;
+import static java.util.Comparator.comparing;
 
 class Rows {
     List<Row> values;
@@ -28,7 +30,7 @@ class Rows {
                 .collect(toListAnd(Rows::new));
     }
 
-    public Rows equalsTo(Integer index, Object value) {
+    public Rows equalsTo(Integer index, Value value) {
         return values.stream()
                 .filter(val -> val.equalsTo(index, value))
                 .collect(toListAnd(Rows::new));
@@ -51,6 +53,16 @@ class Rows {
     public Rows map(Function<Row, Row> mapper) {
         return values.stream()
                 .map(mapper)
+                .collect(toListAnd(Rows::new));
+    }
+
+    public Rows sort(int index, boolean asc) {
+        Comparator<Row> comparator = comparing(row -> row.get(index));
+        if (!asc) {
+            comparator = comparator.reversed();
+        }
+        return values.stream()
+                .sorted(comparator)
                 .collect(toListAnd(Rows::new));
     }
 }

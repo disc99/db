@@ -1,11 +1,13 @@
 package io.disc99.db;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.disc99.db.Functions.toListAnd;
+import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
 class Columns {
@@ -19,6 +21,10 @@ class Columns {
         return Arrays.stream(names)
                 .map(Column::new)
                 .collect(toListAnd(Columns::new));
+    }
+
+    public static Columns single(Column column) {
+        return new Columns(singletonList(column));
     }
 
     public List<Integer> findIndexesBy(Columns columns) {

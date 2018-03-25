@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +26,8 @@ public class App
                 .insert(3, "キャベツ", 2, 200)
                 .insert(4, "さんま", 3, 220)
                 .insert(5, "わかめ", null, 250)//区分がnull
-                .insert(6, "しいたけ", 4, 180);//該当区分なし
+                .insert(6, "しいたけ", 4, 180)//該当区分なし
+                .insert(7, "ドリアン", 1, null);
         //区分テーブル
         Table kubun = Table.create("kubun",
                 new String[]{"kubun_id", "kubun_name"});
@@ -48,6 +50,18 @@ public class App
                 .leftJoin("kubun", "kubun_id")
                 .equalsTo("shohin_id", 2)
                 .select("shohin_id", "shohin_name", "kubun_name", "price"));
+        System.out.println(Query //安い順に並べ替え
+                .from("shohin")
+                .orderBy("price"));
+        System.out.println(Query //高い順に並べ替え
+                .from("shohin")
+                .orderBy("price", false));
+        System.out.println(Query //集計
+                .from(Query
+                        .from("shohin")
+                        .groupBy("kubun_id", new Count("shohin_name"), new Average("price")))
+                .leftJoin("kubun", "kubun_id")
+                .select("kubun_id", "kubun_name", "count", "average"));
     }
 
     /** テーブル一覧 */
@@ -106,6 +120,102 @@ public class App
          * @return
          */
         QueryObj select(String... columnNames);
+
+
+        /**
+         * 昇順に並べ替え
+         * @param columnName 並べ替えるフィールド名
+         * @return
+         */
+        QueryObj orderBy(String columnName);
+
+        /**
+         * 並べ替え
+         * @param columnName 並べ替えるフィールド名
+         * @param asc 昇順のばあいtrue
+         * @return
+         */
+        QueryObj orderBy(String columnName, boolean asc);
+
+        /**
+         * グループ化
+         * @param columnName グループ化するフィールド名
+         * @param aggregations 集計関数
+         * @return
+         */
+        QueryObj groupBy(String columnName, Aggregation... aggregations);
+    }
+
+    /** 集計関数の基底 */
+    public static abstract class Aggregation{
+        String columnName;
+        public Aggregation(String columnName) {
+            this.columnName = columnName;
+        }
+        /** 関数名 */
+        public abstract String getName();
+        /** データ追加 */
+        public abstract void addData(Object value);
+        /** 結果取得 */
+        public abstract Object getResult();
+        /** リセット */
+        public abstract void reset();
+    }
+
+    /** 集計用カウント関数 */
+    public static class Count extends Aggregation{
+        int counter = 0;
+
+        @Override
+        public String getName() {
+            return "count";
+        }
+        public Count(String columnName) {
+            super(columnName);
+        }
+        @Override
+        public void addData(Object value) {
+            ++counter;
+        }
+        @Override
+        public Object getResult() {
+            return counter;
+        }
+        @Override
+        public void reset() {
+            counter = 0;
+        }
+    }
+
+    /** 集計用平均関数 */
+    public static class Average extends Aggregation{
+        int counter = 0;
+        int total = 0;
+        public Average(String columnName) {
+            super(columnName);
+        }
+
+        @Override
+        public String getName() {
+            return "average";
+        }
+
+        @Override
+        public void addData(Object value) {
+            ++counter;
+            total += (Integer)value;
+        }
+
+        @Override
+        public Object getResult() {
+            return (double)total / counter;
+        }
+
+        @Override
+        public void reset() {
+            counter = 0;
+            total = 0;
+        }
     }
 
     /** リレーション */
@@ -217,9 +327,11 @@ public class App
             }
             List<Taple> newTaples = new ArrayList<>();
             for(Taple tp : taples){
-                if((Integer)tp.values.get(idx) < value){
-                    newTaples.add(tp);
-                }
+                try{
+                    if((Integer)tp.values.get(idx) < value){
+                        newTaples.add(tp);
+                    }
+                }catch(NullPointerException | ArrayIndexOutOfBoundsException ex){}
             }
             return new Relation(columns, newTaples);
         }
@@ -243,6 +355,108 @@ public class App
                 }
             }
             return new Relation(columns, newTaples);
+        }
+
+        @Override
+        public QueryObj orderBy(String columnName) {
+            return orderBy(columnName, true);
+        }
+
+        @Override
+        public QueryObj orderBy(String columnName, final boolean asc) {
+            final int idx = findColumn(columnName);
+            if(idx >= columns.size()){
+                return this;
+            }
+
+            List<Taple> newTaple = new ArrayList<>(taples);
+            Collections.sort(newTaple, new Comparator<Taple>(){
+                @Override
+                public int compare(Taple o1, Taple o2) {
+                    Object v1 = o1.values.size() > idx ? o1.values.get(idx) : null;
+                    Object v2 = o2.values.size() > idx ? o2.values.get(idx) : null;
+                    if(v1 == null){
+                        if(v2 == null){
+                            return 0;
+                        }else{
+                            return 1;
+                        }
+                    }
+                    if(v2 == null){
+                        return -1;
+                    }
+                    return ((Comparable)v1).compareTo(v2) * (asc ? 1 : -1);
+                }
+            });
+
+            return new Relation(columns, newTaple);
+        }
+
+        @Override
+        public QueryObj groupBy(String columnName, Aggregation... aggregations) {
+            //列名を作成
+            List<Column> newColumns = new ArrayList<>();
+            newColumns.add(new Column(columnName));
+            List<Integer> colIndexes = new ArrayList<>();
+            for(Aggregation agg : aggregations){
+                newColumns.add(new Column(agg.getName()));
+                colIndexes.add(findColumn(agg.columnName));
+            }
+
+            //集計行を取得
+            int idx = findColumn(columnName);
+            if(idx >= columns.size()){
+                return new Relation(newColumns, Collections.EMPTY_LIST);
+            }
+
+            //あらかじめソート
+            Relation sorted = (Relation) orderBy(columnName);
+
+            Object current = null;
+            List<Taple> newTaples = new ArrayList<>();
+            for(Taple tp : sorted.taples){
+                //集計フィールド取得
+                if(tp.values.size() <= idx) continue;
+                Object v = tp.values.get(idx);
+                if(v == null) continue;
+
+                if(!v.equals(current)){
+                    if(current != null){
+                        //集計行を追加
+                        List<Object> values = new ArrayList<>();
+                        values.add(current);
+                        for(Aggregation agg : aggregations){
+                            values.add(agg.getResult());
+                        }
+                        newTaples.add(new Taple(values));
+                    }
+                    current = v;
+                    for(Aggregation agg : aggregations){
+                        agg.reset();
+                    }
+                }
+                //集計
+                for(int i = 0; i < aggregations.length; ++i){
+                    int aidx = colIndexes.get(i);
+                    if(tp.values.size() <= aidx) continue;
+                    Object cv = tp.values.get(aidx);
+                    if(cv == null) continue;
+
+                    Aggregation ag = aggregations[i];
+                    ag.addData(cv);
+                }
+            }
+            if(current != null){
+                //集計行を追加
+                List<Object> values = new ArrayList<>();
+                values.add(current);
+                for(Aggregation agg : aggregations){
+                    values.add(agg.getResult());
+                }
+                newTaples.add(new Taple(values));
+            }
+
+            return new Relation(newColumns, newTaples);
         }
 
         /**

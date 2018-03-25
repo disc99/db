@@ -7,6 +7,7 @@ import java.io.StringWriter;
 import java.util.*;
 
 import static io.disc99.db.Functions.toListAnd;
+import static java.util.Collections.singletonList;
 
 /*
  * Ubiquitous language.
@@ -44,7 +45,108 @@ public class App {
 
         ResultSet lessThan(String columnName, Integer value);
 
-        ResultSet equalsTo(String columnName, Object value);
+        ResultSet equalsTo(String columnName, Value value);
+
+        ResultSet orderBy(String columnName);
+
+        ResultSet orderBy(String columnName, boolean asc);
+
+        ResultSet groupBy(String columnName, Aggregation... aggregations);
+    }
+
+    static class Aggregations {
+        List<Aggregation> values;
+        private Aggregations(Aggregation[] values) {
+            this.values = Arrays.asList(values);
+        }
+
+        static Aggregations of(Aggregation... aggregations) {
+            return new Aggregations(aggregations);
+        }
+
+        public Columns columns() {
+            return values.stream()
+                    .map(Aggregation::name)
+                    .collect(toListAnd(Columns::new));
+        }
+    }
+
+    public static abstract class Aggregation {
+        String columnName;
+        public Aggregation(String columnName) {
+            this.columnName = columnName;
+        }
+        public abstract Column name();
+        public abstract Column column();
+        public abstract void add(Value value);
+        public abstract Object result();
+        public abstract void reset();
+    }
+
+    public static class Count extends Aggregation {
+        int counter = 0;
+
+        @Override
+        public Column name() {
+            return new Column("count");
+        }
+
+        @Override
+        public Column column() {
+            return new Column(columnName);
+        }
+
+        public Count(String columnName) {
+            super(columnName);
+        }
+        @Override
+        public void add(Value value) {
+            ++counter;
+        }
+        @Override
+        public Object result() {
+            return counter;
+        }
+        @Override
+        public void reset() {
+            counter = 0;
+        }
+    }
+
+    public static class Average extends Aggregation {
+        int counter = 0;
+        int total = 0;
+
+        public Average(String columnName) {
+            super(columnName);
+        }
+
+        @Override
+        public Column name() {
+            return new Column("average");
+        }
+
+        @Override
+        public Column column() {
+            return new Column(columnName);
+        }
+
+        @Override
+        public void add(Value value) {
+            ++counter;
+            total += (Integer) value.value();
+        }
+
+        @Override
+        public Object result() {
+            return (double) total / counter;
+        }
+
+        @Override
+        public void reset() {
+            counter = 0;
+            total = 0;
+        }
     }
 
     @AllArgsConstructor
@@ -83,7 +185,7 @@ public class App {
             }
 
             Rows newRows = rows.map((Row row) -> {
-                Object leftValue = row.get(leftColumnIdx);
+                Value leftValue = row.get(leftColumnIdx);
                 Result leftRel = (Result) target.equalsTo(matchingField, leftValue);
                 return leftRel.isEmpty()
                         ? row.concat(Row.empty(newColumns.size() - row.size()))
@@ -104,7 +206,7 @@ public class App {
         }
 
         @Override
-        public ResultSet equalsTo(String columnName, Object value) {
+        public ResultSet equalsTo(String columnName, Value value) {
             Column column = new Column(columnName);
             if (!columns.exist(column)) {
                 return new Result(columns);
@@ -143,6 +245,116 @@ public class App {
 
             return sw.toString();
         }
+        @Override
+        public ResultSet orderBy(String columnName) {
+            return orderBy(columnName, true);
+        }
+
+        @Override
+        public ResultSet orderBy(String columnName, final boolean asc) {
+            final int idx = columns.findIndexBy(new Column(columnName));
+            if(idx >= columns.size()){
+                return this;
+            }
+
+            Rows newRows = rows.sort(idx, asc);
+//            List<Row> newRow = new ArrayList<>(rows);
+//            Collections.sort(newRow, new Comparator<Row>(){
+//                @Override
+//                public int compare(Row o1, Row o2) {
+//                    Object v1 = o1.values.size() > idx ? o1.values.get(idx) : null;
+//                    Object v2 = o2.values.size() > idx ? o2.values.get(idx) : null;
+//                    if(v1 == null){
+//                        if(v2 == null){
+//                            return 0;
+//                        }else{
+//                            return 1;
+//                        }
+//                    }
+//                    if(v2 == null){
+//                        return -1;
+//                    }
+//                    return ((Comparable)v1).compareTo(v2) * (asc ? 1 : -1);
+//                }
+//            });
+            return new Result(columns, newRows);
+        }
+
+        @Override
+        public ResultSet groupBy(String columnName, Aggregation... aggregations) {
+//            Column column = new Column(columnName);
+//            Aggregations aggs = Aggregations.of(aggregations);
+//            //列名を作成
+//            Columns aggColumns = aggs.columns();
+//            List<Integer> colIndexes = columns.findIndexesBy(aggColumns);
+//
+////            List<Column> newColumns = new ArrayList<>();
+//            Columns newColumns = Columns.single(column).concat(aggColumns);
+////            newColumns.add(column);
+////            List<Integer> colIndexes = new ArrayList<>();
+////            for(Aggregation agg : aggregations) {
+////                newColumns.add(agg.name());
+////                colIndexes.add(columns.findIndexBy(agg.column()));
+////            }
+//
+//            //集計行を取得
+//            int idx = columns.findIndexBy(column);
+//            if (idx >= columns.size()) {
+//                return new Result(newColumns);
+//            }
+//
+//            //あらかじめソート
+//            Result sorted = (Result) orderBy(columnName);
+//
+//            Value current = null;
+//            List<Row> newRows = new ArrayList<>();
+//
+//            for (Row row : sorted.rows) {
+//                //集計フィールド取得
+//                Value v = row.values.get(idx);
+//                if(v == null) continue;
+//
+//                if(!v.equals(current)){
+//                    if(current != null){
+//                        //集計行を追加
+//                        List<Value> values = new ArrayList<>();
+//                        values.add(current);
+//                        for(Aggregation agg : aggregations){
+//                            values.add(agg.result());
+//                        }
+//                        newRows.add(new Row(values));
+//                    }
+//                    current = v;
+//                    for(Aggregation agg : aggregations){
+//                        agg.reset();
+//                    }
+//                }
+//
+//                //集計
+//                for(int i = 0; i < aggregations.length; ++i){
+//                    int aidx = colIndexes.get(i);
+//                    if(row.values.size() <= aidx) continue;
+//                    Object cv = row.values.get(aidx);
+//                    if(cv == null) continue;
+//
+//                    Aggregation ag = aggregations[i];
+//                    ag.add(cv);
+//                }
+//            }
+//
+//            if(current != null){
+//                //集計行を追加
+//                List<Object> values = new ArrayList<>();
+//                values.add(current);
+//                for(Aggregation agg : aggregations){
+//                    values.add(agg.result());
+//                }
+//                newRows.add(new Row(values));
+//            }
+//
+//            return new Result(newColumns, newRows);
+            return null;
+        }
     }
 
     static class Table {
@@ -165,7 +377,7 @@ public class App {
         }
 
         Table insert(Object... values) {
-            rows.add(new Row(Arrays.asList(values)));
+//            rows.add(new Row(Arrays.asList(values)));
             return this;
         }
 

@@ -1,6 +1,5 @@
 package io.disc99.db;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -8,14 +7,14 @@ import java.util.stream.Stream;
 import static io.disc99.db.Functions.toListAnd;
 
 class Row {
-    List<Object> values;
+    List<Value> values;
 
-    public Row(List<Object> values) {
+    public Row(List<Value> values) {
         this.values = values;
     }
 
     public static Row empty(Integer size) {
-        return new Row(Arrays.asList(new Object[size]));
+        return new Row(Arrays.asList(new Value[size]));
     }
 
     public Row selectBy(List<Integer> indexes) {
@@ -24,12 +23,13 @@ class Row {
                 .collect(toListAnd(Row::new));
     }
 
-    public boolean equalsTo(Integer index, Object value) {
+    public boolean equalsTo(Integer index, Value value) {
         return values.get(index).equals(value);
     }
 
     public boolean lessThan(Integer index, Integer value) {
-        return (Integer)values.get(index) < value;
+        Object object = values.get(index).value();
+        return object == null ? false : (Integer) object < value;
     }
 
     public Row concat(Row row) {
@@ -37,7 +37,7 @@ class Row {
                 .collect(toListAnd(Row::new));
     }
 
-    public Object get(Integer index) {
+    public Value get(Integer index) {
         return values.get(index);
     }
 
