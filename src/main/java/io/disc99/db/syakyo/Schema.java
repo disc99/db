@@ -1,8 +1,8 @@
-package io.disc99.db;
+package io.disc99.db.syakyo;
 
 import java.util.HashMap;
 import java.util.Map;
-import io.disc99.db.App.*;
+import io.disc99.db.syakyo.App.*;
 
 /**
  * Schema.

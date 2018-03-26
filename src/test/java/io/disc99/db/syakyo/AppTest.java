@@ -1,6 +1,7 @@
-package io.disc99.db;
+package io.disc99.db.syakyo;
 
-import io.disc99.db.App.*;
+import io.disc99.db.syakyo.App.*;
+import io.disc99.db.syakyo.IntegerValue;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 

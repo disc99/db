@@ -1,10 +1,10 @@
-package io.disc99.db;
+package io.disc99.db.syakyo;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static io.disc99.db.Functions.toListAnd;
+import static io.disc99.db.syakyo.Functions.toListAnd;
 
 class Row {
     List<Value> values;

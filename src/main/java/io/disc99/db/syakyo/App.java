@@ -1,4 +1,4 @@
-package io.disc99.db;
+package io.disc99.db.syakyo;
 
 import lombok.AllArgsConstructor;
 
@@ -6,8 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
 
-import static io.disc99.db.Functions.toListAnd;
-import static java.util.Collections.singletonList;
+import static io.disc99.db.syakyo.Functions.toListAnd;
 
 /*
  * Ubiquitous language.
