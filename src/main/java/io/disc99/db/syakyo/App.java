@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
 
-import static io.disc99.db.syakyo.Functions.toListAnd;
+import static io.disc99.db.Functions.toListAnd;
 
 /*
  * Ubiquitous language.
@@ -149,7 +149,7 @@ public class App {
     }
 
     @AllArgsConstructor
-    static class Result implements ResultSet {
+    public static class Result implements ResultSet {
         Columns columns;
         Rows rows;
 
@@ -371,7 +371,6 @@ public class App {
             Table table = Arrays.stream(columnNames)
                     .map(Column::new)
                     .collect(toListAnd(columns -> new Table(name, new Columns(columns))));
-            schema.add(table);
             return table;
         }
 

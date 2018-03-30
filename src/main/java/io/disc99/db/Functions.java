@@ -1,4 +1,4 @@
-package io.disc99.db.syakyo;
+package io.disc99.db;
 
 import java.util.List;
 import java.util.function.Function;

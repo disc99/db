@@ -5,11 +5,11 @@ import java.util.List;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static io.disc99.db.syakyo.Functions.toListAnd;
+import static io.disc99.db.Functions.toListAnd;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
-class Columns {
+public class Columns {
     List<Column> values;
 
     Columns(List<Column> columns) {

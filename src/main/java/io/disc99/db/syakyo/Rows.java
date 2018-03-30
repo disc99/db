@@ -5,10 +5,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 
-import static io.disc99.db.syakyo.Functions.toListAnd;
+import static io.disc99.db.Functions.toListAnd;
 import static java.util.Comparator.comparing;
 
-class Rows {
+public class Rows {
     List<Row> values;
 
     private Rows(List<Row> rows) {

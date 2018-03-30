@@ -4,9 +4,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static io.disc99.db.syakyo.Functions.toListAnd;
+import static io.disc99.db.Functions.toListAnd;
 
-class Row {
+public class Row {
     List<Value> values;
 
     public Row(List<Value> values) {
