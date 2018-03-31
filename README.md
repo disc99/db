@@ -1,8 +1,13 @@
 # db
 
 ## TODO
-- [ ] Query
-- [ ] Execute
+- [ ] Select
+- [ ] Join
+- [x] Insert
+- [ ] Update
+- [ ] Delete
+- [ ] Limit
+- [ ] Order by
 - [ ] Optimize
 - [ ] Index
 - [ ] Transaction
