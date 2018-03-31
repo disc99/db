@@ -27,9 +27,7 @@ public class Database {
 
         if (statement instanceof CreateTable) {
             CreateTable createTable = (CreateTable) statement;
-            Table table = createTable.getColumnDefinitions().stream()
-                    .map(Factory::createColumn)
-                    .collect(toListAnd(columns -> Table.of(Factory.createTableName(createTable), Columns.of(columns))));
+            Table table = Table.create(createTable);
             tables.put(table.name(), table);
 
         } else if (statement instanceof CreateIndex) {
@@ -37,14 +35,18 @@ public class Database {
 
         } else if (statement instanceof Insert) {
             Insert insert = (Insert) statement;
-            Table table = tables.get(Factory.createTableName(insert));
-            table.insert(Factory.createRow(insert));
+            Table table = tables.get(TableName.of(insert));
+            table.insert(insert);
 
         } else if (statement instanceof Update) {
-            // TODO
+            Update update = (Update) statement;
+            Table table = tables.get(TableName.of(update));
+            table.update(update);
 
         } else if (statement instanceof Delete) {
-            // TODO
+            Delete delete = (Delete) statement;
+            Table table = tables.get(TableName.of(delete));
+            table.delete(delete);
 
         }
 

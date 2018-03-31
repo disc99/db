@@ -160,10 +160,11 @@ public class App {
 
         @Override
         public ResultSet select(String... columnNames) {
-            Columns newColumns = Columns.create(columnNames);
-            List<Integer> indexes = columns.findIndexesBy(newColumns);
-            Rows newRows = rows.selectBy(indexes);
-            return new Result(newColumns, newRows);
+//            Columns newColumns = Columns.of(columnNames);
+//            List<Integer> indexes = columns.findIndexesBy(newColumns);
+//            Rows newRows = rows.selectBy(indexes);
+//            return new Result(newColumns, newRows);
+            return null;
         }
 
         @Override

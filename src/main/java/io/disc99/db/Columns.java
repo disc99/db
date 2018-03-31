@@ -3,13 +3,13 @@ package io.disc99.db;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static io.disc99.db.Functions.toListAnd;
-import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toList;
 
 public class Columns {
     List<Column> values;
@@ -21,6 +21,14 @@ public class Columns {
     public static Columns of(List<Column> columns) {
         return columns.stream()
                 .collect(toListAnd(Columns::new));
+    }
+
+    public Integer index(ColumnName name) {
+        return IntStream.range(0, values.size())
+                .filter(i -> values.get(i).name().equals(name))
+                .boxed()
+                .findFirst()
+                .orElseThrow(() -> new SqlException("Unknown column: " + name));
     }
 
 //    public static Columns single(Column column) {
@@ -49,7 +57,7 @@ public class Columns {
 //                .anyMatch(col -> col.equals(column));
 //    }
 //
-//    public Integer size() {
-//        return values.size();
-//    }
+    public Integer size() {
+        return values.size();
+    }
 }
