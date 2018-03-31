@@ -8,9 +8,13 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 
 public interface Value<T> extends Comparable<T> {
+
     T value();
 
     static Value of(Expression expression) {
+        if (expression instanceof net.sf.jsqlparser.expression.NullValue) {
+            return new NullValue();
+        }
         if (expression instanceof LongValue) {
             BigInteger value = ((LongValue) expression).getBigIntegerValue();
             return new IntegerValue(value.intValue());

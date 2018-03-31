@@ -1,16 +1,15 @@
 package io.disc99.db;
 
 
-import java.util.Arrays;
+import lombok.ToString;
+
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import static io.disc99.db.Functions.toListAnd;
+import static java.util.stream.Collectors.toList;
 
+@ToString
 public class Columns {
     List<Column> values;
 
@@ -29,6 +28,18 @@ public class Columns {
                 .boxed()
                 .findFirst()
                 .orElseThrow(() -> new SqlException("Unknown column: " + name));
+    }
+
+    public List<Integer> indexes(ColumnNames names) {
+        return names.all().stream()
+                .map(this::index)
+                .collect(toList());
+    }
+
+    public ColumnNames names() {
+        return values.stream()
+                .map(Column::name)
+                .collect(toListAnd(ColumnNames::of));
     }
 
 //    public static Columns single(Column column) {

@@ -1,8 +1,10 @@
 package io.disc99.db.value;
 
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 
 @AllArgsConstructor
+@ToString
 public class StringValue implements Value<String> {
     String value;
 
