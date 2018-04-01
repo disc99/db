@@ -55,7 +55,7 @@ public class Result {
      * @param result
      * @param rightColumn
      * @param leftColumn
-     * @param type
+     * @param join
      * @return
      */
     // TODO Supports other expressions
@@ -77,5 +77,10 @@ public class Result {
         ColumnNames columnNames = ColumnNames.of(Collections.concat(names.all(), result.names.all()));
 
         return Result.of(columnNames, rows);
+    }
+
+    public Result limit(Integer limit) {
+        Rows rows = this.rows.limit(limit);
+        return Result.of(names, rows);
     }
 }

@@ -84,11 +84,33 @@ public class DatabaseTest {
                         "Row(values=[IntegerValue(value=3), IntegerValue(value=1), StringValue(value=book 3), StringValue(value=user 1)]), " +
                         "Row(values=[IntegerValue(value=3), IntegerValue(value=2), StringValue(value=book 3), StringValue(value=user 2)])" +
                     "]))");
+
+//        Result result4 = database.query(
+//                "select id, name from books where id = 2");
+//        assertThat(result4.toString()).isEqualTo(
+//                "Result(" +
+//                    "names=ColumnNames(values=[" +
+//                        "ColumnName(table=TableName(value=books), value=id), " +
+//                        "ColumnName(table=TableName(value=books), value=name)]), " +
+//                    "rows=Rows(values=[" +
+//                        "Row(values=[IntegerValue(value=2), NullValue()])" +
+//                    "]))");
+
+        Result result5 = database.query("select id, name from books limit 2");
+        assertThat(result5.toString()).isEqualTo(
+                "Result(" +
+                    "names=ColumnNames(values=[" +
+                        "ColumnName(table=TableName(value=null), value=id), " +
+                        "ColumnName(table=TableName(value=null), value=name)]), " +
+                    "rows=Rows(values=[" +
+                        "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
+                        "Row(values=[IntegerValue(value=2), NullValue()])" +
+                    "]))");
     }
 
     @Test
     public void a() throws JSQLParserException {
-        Statement statement = CCJSqlParserUtil.parse("select * from books b join users u on b.id = u.book_id");
+        Statement statement = CCJSqlParserUtil.parse("select * from books b join users u on b.id = u.book_id where books.id = 2 limit 2");
         PlainSelect selectBody = (PlainSelect) ((Select)statement).getSelectBody();
         System.out.println("selectBody.getLimit(): " + selectBody.getLimit());
         System.out.println("selectBody.getJoins(): " + selectBody.getJoins());

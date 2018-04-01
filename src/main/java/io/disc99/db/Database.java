@@ -2,6 +2,7 @@ package io.disc99.db;
 
 import io.disc99.db.engine.relation.SqlParser;
 import lombok.AllArgsConstructor;
+import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
@@ -68,20 +69,26 @@ public class Database {
 
         PlainSelect select = (PlainSelect) ((Select) statement).getSelectBody();
         Result result = tables.get(TableName.of((net.sf.jsqlparser.schema.Table) select.getFromItem())).toResult();
-        if (select.getJoins() == null) {
-            return result.select(select);
+
+        if (select.getJoins() != null) {
+            result = select.getJoins().stream()
+                    .reduce(result, (leftResult, join) -> {
+                        net.sf.jsqlparser.schema.Table rightItem = (net.sf.jsqlparser.schema.Table) join.getRightItem();
+                        EqualsTo equalsTo = (EqualsTo) join.getOnExpression();
+                        Column leftExpression = (Column) equalsTo.getLeftExpression();
+                        Column rightExpression = (Column) equalsTo.getRightExpression();
+                        Result rightResult = tables.get(TableName.of(rightItem)).toResult();
+                        return leftResult.join(rightResult, ColumnName.of(leftExpression), ColumnName.of(rightExpression), join);
+                    }, Result::concat);
         }
 
-        return select.getJoins().stream()
-                .reduce(result, (leftResult, join) -> {
-                    net.sf.jsqlparser.schema.Table rightItem = (net.sf.jsqlparser.schema.Table) join.getRightItem();
-                    EqualsTo equalsTo = (EqualsTo) join.getOnExpression();
-                    Column leftExpression = (Column) equalsTo.getLeftExpression();
-                    Column rightExpression = (Column) equalsTo.getRightExpression();
-                    Result rightResult = tables.get(TableName.of(rightItem)).toResult();
-                    return leftResult.join(rightResult, ColumnName.of(leftExpression), ColumnName.of(rightExpression), join);
-                }, Result::concat)
-                .select(select);
+        result = result.select(select);
+
+        if (select.getLimit() != null && !select.getLimit().isLimitNull()) {
+            result = result.limit(((LongValue)select.getLimit().getRowCount()).getBigIntegerValue().intValue());
+        }
+
+        return result;
     }
 
     @Override

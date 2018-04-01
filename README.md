@@ -9,7 +9,7 @@
 - [x] Insert
 - [ ] Update
 - [ ] Delete
-- [ ] Limit
+- [x] Limit
 - [ ] Order by
 - [ ] Group by
 - [ ] Aggregate function

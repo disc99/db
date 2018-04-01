@@ -5,8 +5,10 @@ import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.LongStream;
 
 import static io.disc99.db.util.Functions.toListAnd;
+import static java.lang.Math.min;
 import static java.util.Collections.singletonList;
 
 @ToString
@@ -42,7 +44,7 @@ public class Rows {
     public Rows extract(List<Integer> indexes) {
         return values.stream()
                 .map(row -> row.extract(indexes))
-                .collect(toListAnd(Rows::new));
+                .collect(toListAnd(Rows::of));
     }
 
     public Rows equalTo(Integer index, Value value) {
@@ -57,5 +59,9 @@ public class Rows {
 
     boolean isEmpty() {
         return values.isEmpty();
+    }
+
+    public Rows limit(Integer limit) {
+        return Rows.of(values.subList(0, min(values.size(), limit)));
     }
 }
