@@ -10,7 +10,7 @@
 - [ ] Update
 - [ ] Delete
 - [x] Limit
-- [ ] Order by
+- [x] Order by
 - [ ] Group by
 - [ ] Aggregate function
 - [ ] Optimize

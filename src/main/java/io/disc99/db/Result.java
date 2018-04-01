@@ -83,4 +83,8 @@ public class Result {
         Rows rows = this.rows.limit(limit);
         return Result.of(names, rows);
     }
+
+    public Result orderBy(Order order) {
+        return Result.of(names, rows.sort(names.index(order.name()), order.isAsc()));
+    }
 }

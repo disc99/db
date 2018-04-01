@@ -106,6 +106,18 @@ public class DatabaseTest {
                         "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
                         "Row(values=[IntegerValue(value=2), NullValue()])" +
                     "]))");
+
+        Result result6 = database.query("select id, name from books order by id desc");
+        assertThat(result6.toString()).isEqualTo(
+                "Result(" +
+                    "names=ColumnNames(values=[" +
+                        "ColumnName(table=TableName(value=null), value=id), " +
+                        "ColumnName(table=TableName(value=null), value=name)]), " +
+                    "rows=Rows(values=[" +
+                        "Row(values=[IntegerValue(value=3), StringValue(value=book 3)]), " +
+                        "Row(values=[IntegerValue(value=2), NullValue()]), " +
+                        "Row(values=[IntegerValue(value=1), StringValue(value=book 1)])" +
+                    "]))");
     }
 
     @Test

@@ -11,8 +11,8 @@ public class DoubleValue implements Value<Double> {
     Double value;
 
     @Override
-    public int compareTo(Double o) {
-        return value.compareTo(o);
+    public int compareTo(Value o) {
+        return value.compareTo(((DoubleValue)o).value());
     }
 
     @Override

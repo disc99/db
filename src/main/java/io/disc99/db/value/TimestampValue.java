@@ -13,8 +13,8 @@ public class TimestampValue implements Value<Timestamp> {
     Timestamp value;
 
     @Override
-    public int compareTo(Timestamp o) {
-        return value.compareTo(o);
+    public int compareTo(Value o) {
+        return value.compareTo(((TimestampValue)o).value());
     }
 
     @Override

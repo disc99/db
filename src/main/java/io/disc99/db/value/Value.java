@@ -7,7 +7,7 @@ import net.sf.jsqlparser.expression.LongValue;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 
-public interface Value<T> extends Comparable<T> {
+public interface Value<T> extends Comparable<Value> {
 
     T value();
 

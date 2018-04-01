@@ -10,7 +10,7 @@ import lombok.ToString;
 public class NullValue implements Value<Object> {
 
     @Override
-    public int compareTo(Object o) {
+    public int compareTo(Value o) {
         return 0;
     }
 

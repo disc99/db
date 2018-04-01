@@ -13,6 +13,7 @@ import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 
+import java.util.List;
 import java.util.Map;
 
 
@@ -83,6 +84,11 @@ public class Database {
         }
 
         result = result.select(select);
+
+        if (select.getOrderByElements() != null) {
+            List<OrderByElement> orderByElements = select.getOrderByElements();
+            result = result.orderBy(Order.of(orderByElements.get(0)));
+        }
 
         if (select.getLimit() != null && !select.getLimit().isLimitNull()) {
             result = result.limit(((LongValue)select.getLimit().getRowCount()).getBigIntegerValue().intValue());

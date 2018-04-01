@@ -11,8 +11,8 @@ public class IntegerValue implements Value<Integer> {
     Integer value;
 
     @Override
-    public int compareTo(Integer o) {
-        return value.compareTo(o);
+    public int compareTo(Value o) {
+        return value.compareTo(((IntegerValue)o).value());
     }
 
     @Override

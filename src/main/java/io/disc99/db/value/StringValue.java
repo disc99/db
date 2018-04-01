@@ -11,8 +11,8 @@ public class StringValue implements Value<String> {
     String value;
 
     @Override
-    public int compareTo(String o) {
-        return value.compareTo(o);
+    public int compareTo(Value o) {
+        return value.compareTo(((StringValue)o).value());
     }
 
     @Override
