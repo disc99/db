@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import static io.disc99.db.Functions.toListAnd;
+import static io.disc99.db.util.Functions.toListAnd;
 
 public class Row {
     List<Value> values;

@@ -1,8 +1,12 @@
 # db
 
 ## TODO
-- [ ] Select
+- [x] Select
 - [ ] Join
+- [x] Left Join
+- [ ] Using
+- [x] On
+- [ ] Where
 - [x] Insert
 - [ ] Update
 - [ ] Delete

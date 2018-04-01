@@ -1,9 +1,9 @@
 package io.disc99.db;
 
 import io.disc99.db.engine.relation.SqlParser;
-import io.disc99.db.syakyo.Rows;
 import lombok.AllArgsConstructor;
-import lombok.ToString;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.index.CreateIndex;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
@@ -12,10 +12,7 @@ import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.select.*;
 import net.sf.jsqlparser.statement.update.Update;
 
-import java.util.List;
 import java.util.Map;
-
-import static io.disc99.db.Functions.toListAnd;
 
 
 @AllArgsConstructor
@@ -68,10 +65,23 @@ public class Database {
         if (!(statement instanceof Select)) {
             throw new SqlException("Unknown statement: " + statement);
         }
+
         PlainSelect select = (PlainSelect) ((Select) statement).getSelectBody();
-        net.sf.jsqlparser.schema.Table table = (net.sf.jsqlparser.schema.Table) select.getFromItem();
-        Table selectTable = tables.get(TableName.of(table));
-        return selectTable.select(select);
+        Result result = tables.get(TableName.of((net.sf.jsqlparser.schema.Table) select.getFromItem())).toResult();
+        if (select.getJoins() == null) {
+            return result.select(select);
+        }
+
+        return select.getJoins().stream()
+                .reduce(result, (r, join) -> {
+                    net.sf.jsqlparser.schema.Table rightItem = (net.sf.jsqlparser.schema.Table) join.getRightItem();
+                    EqualsTo equalsTo = (EqualsTo) join.getOnExpression();
+                    Column leftExpression = (Column) equalsTo.getLeftExpression();
+                    Column rightExpression = (Column) equalsTo.getRightExpression();
+                    Result result1 = tables.get(TableName.of(rightItem)).toResult();
+                    return r.leftJoin(result1, ColumnName.of(leftExpression), ColumnName.of(rightExpression));
+                }, Result::concat)
+                .select(select);
     }
 
     @Override

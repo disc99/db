@@ -36,4 +36,8 @@ public class TableName {
     public static TableName of(Delete statement) {
         return new TableName(statement.getTable().getName());
     }
+
+    public boolean isEmpty() {
+        return value == null;
+    }
 }

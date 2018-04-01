@@ -6,7 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.*;
 
-import static io.disc99.db.Functions.toListAnd;
+import static io.disc99.db.util.Functions.toListAnd;
 
 /*
  * Ubiquitous language.

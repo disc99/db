@@ -6,6 +6,7 @@ import lombok.ToString;
 
 @AllArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class DoubleValue implements Value<Double> {
     Double value;
 

@@ -1,4 +1,4 @@
-package io.disc99.db;
+package io.disc99.db.util;
 
 import java.util.List;
 import java.util.function.Function;

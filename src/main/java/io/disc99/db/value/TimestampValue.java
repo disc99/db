@@ -8,6 +8,7 @@ import java.sql.Timestamp;
 
 @AllArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class TimestampValue implements Value<Timestamp> {
     Timestamp value;
 

@@ -12,7 +12,6 @@ import java.util.HashMap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 public class DatabaseTest {
 
     @Test
@@ -21,17 +20,15 @@ public class DatabaseTest {
         database.execute("create table books (id integer, name text)");
         database.execute("insert into books (id, name) values (1, 'book 1')");
         database.execute("insert into books (id, name) values (2, null)");
-        database.execute("insert into books values (3, 'book 3')");
 
         assertThat(database.toString()).isEqualTo(
                 "Database(" +
-                        "tables={TableName(value=books)=Table(name=TableName(value=books), " +
-                        "columns=Columns(values=[Column(name=ColumnName(value=id), type=INTEGER), Column(name=ColumnName(value=name), type=TEXT)]), " +
-                        "rows=Rows(values=[" +
-                            "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
-                            "Row(values=[IntegerValue(value=2), NullValue()]), " +
-                            "Row(values=[IntegerValue(value=3), StringValue(value=book 3)])" +
-                        "]))}" +
+                    "tables={TableName(value=books)=Table(name=TableName(value=books), " +
+                    "columnDefinitions=ColumnDefinitions(values=[ColumnDefinition(name=id, type=INTEGER), ColumnDefinition(name=name, type=TEXT)]), " +
+                    "rows=Rows(values=[" +
+                        "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
+                        "Row(values=[IntegerValue(value=2), NullValue()])" +
+                    "]))}" +
                 ")");
     }
 
@@ -41,23 +38,43 @@ public class DatabaseTest {
         database.execute("create table books (id integer, name text)");
         database.execute("insert into books (id, name) values (1, 'book 1')");
         database.execute("insert into books (id, name) values (2, null)");
-        database.execute("insert into books values (3, 'book 3')");
+        database.execute("insert into books (id, name) values (3, 'book 3')");
+        database.execute("create table users (id integer, book_id integer, name text)");
+        database.execute("insert into users (id, book_id, name) values (1, 2, 'user 1')");
+        database.execute("insert into users (id, book_id, name) values (2, 2, 'user 2')");
 
-        Result result = database.query("select id, name from books");
-        assertThat(result.toString()).isEqualTo(
+        Result result1 = database.query("select id, name from books");
+        assertThat(result1.toString()).isEqualTo(
                 "Result(" +
-                        "names=ColumnNames(values=[ColumnName(value=id), ColumnName(value=name)]), " +
-                        "rows=Rows(values=[" +
-                                "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
-                                "Row(values=[IntegerValue(value=2), NullValue()]), " +
-                                "Row(values=[IntegerValue(value=3), StringValue(value=book 3)])" +
-                        "]))");
+                    "names=ColumnNames(values=[" +
+                        "ColumnName(table=TableName(value=null), value=id), " +
+                        "ColumnName(table=TableName(value=null), value=name)]), " +
+                    "rows=Rows(values=[" +
+                        "Row(values=[IntegerValue(value=1), StringValue(value=book 1)]), " +
+                        "Row(values=[IntegerValue(value=2), NullValue()]), " +
+                        "Row(values=[IntegerValue(value=3), StringValue(value=book 3)])" +
+                    "]))");
 
+        Result result2 = database.query(
+                "select books.id, users.id, books.name, users.name from books left join users on books.id = users.book_id");
+        assertThat(result2.toString()).isEqualTo(
+                "Result(" +
+                    "names=ColumnNames(values=[" +
+                        "ColumnName(table=TableName(value=books), value=id), " +
+                        "ColumnName(table=TableName(value=users), value=id), " +
+                        "ColumnName(table=TableName(value=books), value=name), " +
+                        "ColumnName(table=TableName(value=users), value=name)]), " +
+                    "rows=Rows(values=[" +
+                        "Row(values=[IntegerValue(value=1), NullValue(), StringValue(value=book 1), NullValue()]), " +
+                        "Row(values=[IntegerValue(value=2), IntegerValue(value=1), NullValue(), StringValue(value=user 1)]), " +
+                        "Row(values=[IntegerValue(value=2), IntegerValue(value=2), NullValue(), StringValue(value=user 2)]), " +
+                        "Row(values=[IntegerValue(value=3), NullValue(), StringValue(value=book 3), NullValue()])" +
+                    "]))");
     }
 
     @Test
     public void a() throws JSQLParserException {
-        Statement statement = CCJSqlParserUtil.parse("select * from books");
+        Statement statement = CCJSqlParserUtil.parse("select * from books b join users u on b.id = u.book_id");
         PlainSelect selectBody = (PlainSelect) ((Select)statement).getSelectBody();
         System.out.println("selectBody.getLimit(): " + selectBody.getLimit());
         System.out.println("selectBody.getJoins(): " + selectBody.getJoins());

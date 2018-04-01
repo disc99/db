@@ -6,6 +6,7 @@ import lombok.ToString;
 
 @AllArgsConstructor
 @ToString
+@EqualsAndHashCode
 public class IntegerValue implements Value<Integer> {
     Integer value;
 
