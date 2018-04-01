@@ -73,13 +73,13 @@ public class Database {
         }
 
         return select.getJoins().stream()
-                .reduce(result, (r, join) -> {
+                .reduce(result, (leftResult, join) -> {
                     net.sf.jsqlparser.schema.Table rightItem = (net.sf.jsqlparser.schema.Table) join.getRightItem();
                     EqualsTo equalsTo = (EqualsTo) join.getOnExpression();
                     Column leftExpression = (Column) equalsTo.getLeftExpression();
                     Column rightExpression = (Column) equalsTo.getRightExpression();
-                    Result result1 = tables.get(TableName.of(rightItem)).toResult();
-                    return r.leftJoin(result1, ColumnName.of(leftExpression), ColumnName.of(rightExpression));
+                    Result rightResult = tables.get(TableName.of(rightItem)).toResult();
+                    return leftResult.join(rightResult, ColumnName.of(leftExpression), ColumnName.of(rightExpression), join);
                 }, Result::concat)
                 .select(select);
     }

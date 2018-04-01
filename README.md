@@ -2,9 +2,8 @@
 
 ## TODO
 - [x] Select
-- [ ] Join
+- [x] Inner Join
 - [x] Left Join
-- [ ] Using
 - [x] On
 - [ ] Where
 - [x] Insert
@@ -12,6 +11,8 @@
 - [ ] Delete
 - [ ] Limit
 - [ ] Order by
+- [ ] Group by
+- [ ] Aggregate function
 - [ ] Optimize
 - [ ] Index
 - [ ] Transaction

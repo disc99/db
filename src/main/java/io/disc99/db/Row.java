@@ -39,7 +39,7 @@ public class Row {
         return values.get(index);
     }
 
-    public Rows leftJoin(Rows rows) {
+    public Rows combine(Rows rows) {
         return rows.all().stream()
                 .map(row -> Row.of(concat(values, row.values)))
                 .collect(toListAnd(Rows::of));

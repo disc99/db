@@ -3,6 +3,7 @@ package io.disc99.db;
 import io.disc99.db.util.Collections;
 import io.disc99.db.value.Value;
 import lombok.ToString;
+import net.sf.jsqlparser.statement.select.Join;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 
@@ -54,21 +55,23 @@ public class Result {
      * @param result
      * @param rightColumn
      * @param leftColumn
+     * @param type
      * @return
      */
     // TODO Supports other expressions
-    public Result leftJoin(Result result, ColumnName rightColumn, ColumnName leftColumn) {
+    public Result join(Result result, ColumnName rightColumn, ColumnName leftColumn, Join join) {
         Integer rightIndex = names.index(rightColumn);
         Integer leftIndex = result.names.index(leftColumn);
 
-        // 全columnに対する結合
         Rows rows = this.rows.all().stream()
                 .map(row -> {
                     Value rightValue = row.by(rightIndex);
-                    Rows rightRows = result.rows.all().stream()
-                            .filter(r -> rightValue.equals(r.by(leftIndex))) // ターゲットのRowの絞り込み
-                            .collect(toListAnd(Rows::of));
-                    return row.leftJoin(rightRows.isEmpty() ? Rows.of(Row.empty(result.columnSize())) : rightRows);
+                    Rows rightRows = result.rows.equalTo(leftIndex, rightValue);
+                    if (rightRows.isEmpty() && join.isLeft()) {
+                        rightRows = Rows.of(Row.empty(result.columnSize())); // TODO immutable variable
+                    }
+
+                    return row.combine(rightRows);
                 }).reduce(Rows::add).orElse(Rows.empty());
 
         ColumnNames columnNames = ColumnNames.of(Collections.concat(names.all(), result.names.all()));

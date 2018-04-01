@@ -1,9 +1,9 @@
 package io.disc99.db;
 
+import io.disc99.db.value.Value;
 import lombok.ToString;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static io.disc99.db.util.Functions.toListAnd;
@@ -43,6 +43,12 @@ public class Rows {
         return values.stream()
                 .map(row -> row.extract(indexes))
                 .collect(toListAnd(Rows::new));
+    }
+
+    public Rows equalTo(Integer index, Value value) {
+        return values.stream()
+                .filter(row -> value.equals(row.by(index)))
+                .collect(toListAnd(Rows::of));
     }
 
     public List<Row> all() {
