@@ -9,7 +9,7 @@
     - [x] Inner Join
     - [x] Left Join
     - [x] On
-    - [ ] Where
+    - [x] Where
     - [x] Limit
     - [x] Order by
     - [ ] Group by

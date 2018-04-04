@@ -2,6 +2,7 @@ package io.disc99.db;
 
 import io.disc99.db.engine.relation.SqlParser;
 import lombok.AllArgsConstructor;
+import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Column;
@@ -81,6 +82,13 @@ public class Database {
                         Result rightResult = tables.get(TableName.of(rightItem)).toResult();
                         return leftResult.join(rightResult, ColumnName.of(leftExpression), ColumnName.of(rightExpression), join);
                     }, Result::concat);
+        }
+
+        // where
+        Expression where = select.getWhere();
+        WhereParser whereParser = new WhereParser();
+        if (where != null) {
+            result = whereParser.parse(result, where);
         }
 
         result = result.select(select);
